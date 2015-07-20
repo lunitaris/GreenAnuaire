@@ -24,45 +24,51 @@ GreenAnuaire = {}
 
 # Fonctions de verification de mot de passe.==================================================;
 
+### Fonction qui retourne le mot de passe hashe
 def hash_password(password):
     # uuid is used to generate a random number
     salt = uuid.uuid4().hex
     return hashlib.sha256(salt.encode() + password.encode()).hexdigest() + ':' + salt
-    
+
+### Fonction qui verifie si le hash de la string 'user_password' correspond bien au hash passe en parametre (hashed_password) retourne TRUE si vrai, FALSE sinon.
 def check_password(hashed_password, user_password):
     password, salt = hashed_password.split(':')
     return password == hashlib.sha256(salt.encode() + user_password.encode()).hexdigest()
 
 #============================================================================================;
 
+### Retourne l'annuaire en string
 def afficherA():
     return str(GreenAnuaire)
 
+### Retourne la liste des cles de l'annuaire
 def listU():
     return str(GreenAnuaire.keys())
 
-# Ajout d'un user dans le dico
+# Ajout d'un user dans le dico. Chaque parametres correspond à une case du tableau.
 def add(nom, prenom, mail, ville, poste, tel, droits, mdp):
     nomP = nom+'.'+prenom
     GreenAnuaire[nomP]= [nom, prenom, mail, poste, tel, droits, mdp]
 
+### Retourne 1 si le nom d'utilisateur passé en paramètre enregistré dans l'annuaire est administrateur.
 def isAdmin(login):
     if GreenAnuaire[login][5] == 'A':
         return 1
     else:
         return 0
 
-# retourne 1 si l'user existe dans l'annuaire, sinon 0
+### retourne 1 si l'utilisateur passé en paramètre  existe dans l'annuaire, sinon 0
 def isPresent(user):
     if(user in GreenAnuaire):
         return 1
     else:
         return 0
 
-
+### Retoure la taille de l'anuaire
 def tailleA():
     return len(GreenAnuaire)
 
+### Supprime l'utilisateur passé en paramètre de l'annuaire.
 def delUser(user):
     if(isPresent(user) == 1):
         del GreenAnuaire[user]
@@ -73,11 +79,12 @@ def delUser(user):
 class ThreadClient(threading.Thread):
     '''Héritage de la classe Thread pour gérer la connexion avec un client'''
 
+    # Constructeur
     def __init__(self, conn):
         threading.Thread.__init__(self)
         self.connexion = conn
 
-
+    ### Affiche le menu Administrateur
     def printCmdAdmin(self):
         heelp = """
         Commandes (Administrateur):
@@ -89,7 +96,7 @@ class ThreadClient(threading.Thread):
         """
         self.connexion.send(heelp.encode())
 
-
+    ### Affiche le menu utilisateur
     def printCmdUser(self):
         heelp = """
         Commandes (Utilisateur):
@@ -98,6 +105,7 @@ class ThreadClient(threading.Thread):
         """
         self.connexion.send(heelp.encode())   
 
+    ### Enregistre un nouvel utilisateur dans l'annuaire.
     def insertIntoA(self):
         # nom = input("Nom : ")
         self.connexion.send("Nom: ".encode())
@@ -143,7 +151,8 @@ class ThreadClient(threading.Thread):
             print("Ajout effectue a partir d un client! ")
         
         
-
+    ### Recherche le mot clé 'truc' passé en paramètre dans l'annuaire.
+    ### Si plus de 5  éléments ont été trouvés, la fonction propose à l'utilisateur d'affiner la recherche (fonction récursive)
     def searchA(self, truc, dico):
         tab={} # tableau contenant les resultats
         cpt=0
@@ -177,16 +186,18 @@ class ThreadClient(threading.Thread):
         # LoginMess="Bonjour, Please enter Login: "
         # self.connexion.send(LoginMess.encode())
 
-        loginCli=self.connexion.recv(512)
+        loginCli=self.connexion.recv(512)   # reçoit le login utilisateur.
         nom=loginCli.decode()
 
 
+        ### Si le login fournit est présent dans l'annuaire, le programme demande le mot de passe associé au login, sinon, la connection est coupé.
+        ### En cas de mauvais mot de passe, la connection est coupé.
         if isPresent(nom) == 1:
-            self.connexion.send("User trouvé! ".encode())
+            self.connexion.send("User trouvé! Mot de passe?".encode())
             print("[Server] Demande de connection de "+nom)
-            self.connexion.send("Mot de passe? ".encode())
             motDePasse=self.connexion.recv(128).decode()
 
+            ### Test du mot de passe fournit
             if check_password(GreenAnuaire[nom][6], motDePasse):
                 self.connexion.send("\n ====== Connecté!  ====== \n".encode())
             else:
@@ -197,13 +208,16 @@ class ThreadClient(threading.Thread):
 
             print("Utilisateur: ",nom," connecté!")
 
+        ### Si l'utilisateur n'a pas été trouvé dans l'annuaire
         else:
             self.connexion.send("User non trouvé!".encode())
             print("Utilisateur inconnu: ",nom," a tenté de se connecter. ")
             self.connexion.send("FIN".encode())
             self.connexion.close()      # couper la connexion côté serveur
             return 666
-           
+
+
+        ### Boucle principale du programme
         while 1:
             
             msgCliEncoded = self.connexion.recv(1024)
@@ -212,15 +226,15 @@ class ThreadClient(threading.Thread):
                 break
 
             # ///////////// ADMIN COMMANDES //////////////////////////
-            if (msgClient =="_add" and isAdmin(nom)):   # Done
+            if (msgClient =="_add" and isAdmin(nom)):   ### ajoute un utilisateur dans l'annuaire.
                 self.insertIntoA()
-            # Sauvegarde l'annuaire courant
-            if (msgClient =="_save" and isAdmin(nom)):
+            
+            if (msgClient =="_save" and isAdmin(nom)):  ### Sauvegarde l'annuaire courant
                 saveDico()
             #////////////////////////////////////////////////////////
 
 
-            if msgClient =="_print": # Done
+            if msgClient =="_print": ### Affiche le contenu de l'annuaire.
                 self.connexion.send(afficherA().encode())
             if msgClient =="_list":
                 self.connexion.send(listU().encode())
@@ -272,11 +286,13 @@ class ThreadClient(threading.Thread):
 #add("Admin1", "Admin1", "admin@hotmail.com", "ESGI", "Ingenieur", "123456789", "A")
 
 
+### Fonction qui sauvegarde l'annuaire courant dans le fichier 'GreenAnuaire.pickle'
 def saveDico():
     with open('GreenAnuaire.pickle', 'wb') as f:
         pickle.dump(GreenAnuaire, f)
 
 
+### charge le fichier annuaire déja existant
 with open('GreenAnuaire.pickle', 'rb') as f:
     GreenAnuaire = pickle.load(f)
     print("Chargement de l'annuaire : Done \n")
@@ -285,6 +301,7 @@ with open('GreenAnuaire.pickle', 'rb') as f:
 # Initialisation du serveur - Définition du socket :
 mySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 try:
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     mySocket.bind((HOST, PORT))
 except socket.error:
     print ("La liaison du socket à l'adresse choisie a échoué.")
