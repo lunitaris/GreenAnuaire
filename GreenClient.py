@@ -12,20 +12,29 @@ import socket, threading, time
 from tkinter import *
 from tkinter.messagebox import * # boîte de dialogue
 
+global glob_login
 
 
-
+    ### Fonction qui se connecte à l'adresse du serveur via socket (ip et port)
 def Connet2serv():
-
-    HOST = int(addrServ.get())
-    PORT = int(portServ.get())
+    global glob_login
+    HOST = addrServ.get()       ### récupération de l'adresse du serveur entré dans l'input box
+    PORT = int(portServ.get())  ### récupération du port du serveur entré dans l'input box
     connexion = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         connexion.connect((HOST, PORT))
     except socket.error:
         print ("La connexion a échoué...")
+        showwarning('Résultat','Erreur de connction.\nVeuillez vérifier port et adresse du serveur !')
         sys.exit()    
     print ("Connexion établie avec le serveur...")
+
+    glob_login=login.get()
+
+    th_E1 = ThreadEmission(connexion)
+    th_R1 = ThreadReception(connexion)
+    th_E1.start()
+    th_R1.start()
 
 
 
@@ -41,7 +50,7 @@ class ThreadReception(threading.Thread):
         self.connexion = conn           # réf. du socket de connexion
         
     def run(self):
-        global iKillYouBloodyThread     # variable d'arret du thread.
+        # global iKillYouBloodyThread     # variable d'arret du thread.
         while iKillYouBloodyThread == 0:
             msgServerEncoded = self.connexion.recv(1024)
             message_recu = msgServerEncoded.decode()
@@ -64,25 +73,11 @@ class ThreadEmission(threading.Thread):
         self.connexion = conn           # réf. du socket de connexion
 
 
-
-
-
-    def Verification():
-        self.connexion.send(login.get().encode())
-
-    # if login.get() == 'admin':
-    #     # le mot de passe est bon : on affiche une boîte de dialogue puis on ferme la fenêtre
-    #     showinfo('Résultat','\n Connecté au serveur')
-    #     Mafenetre.destroy()
-    # else:
-    #     # le mot de passe est incorrect : on affiche une boîte de dialogue
-    #     showwarning('Résultat','Mot de passe incorrect.\nVeuillez recommencer !')
-    #     Motdepasse.set('')
-
         
     def run(self):
         global iKillYouBloodyThread     # variable d'arret du thread
-        login = str(sys.argv[1])
+        global glob_login
+        login = str(glob_login)
         self.connexion.send(login.encode())
         time.sleep(3)
 
@@ -158,7 +153,4 @@ Mafenetre.mainloop()
 
 
 
-th_E1 = ThreadEmission(connexion)
-th_R1 = ThreadReception(connexion)
-th_E1.start()
-th_R1.start()
+
