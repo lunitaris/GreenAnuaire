@@ -2,22 +2,36 @@
 # et la réception des messages (utilisation de 2 THREADS).
 import sys
 
-if(len(sys.argv) != 3):
-    print("Usage: # python3 GreenClient.py login port")
-    print("Ex:    # python3 GreenClient.py administrator 666")
-    sys.exit()
+# if(len(sys.argv) != 3):
+#    print("Usage: # python3 GreenClient.py login port")
+ #   print("Ex:    # python3 GreenClient.py administrator 666")
+#    sys.exit()
 
 import socket, threading, time
 
+from tkinter import *
+from tkinter.messagebox import * # boîte de dialogue
 
-HOST = '127.0.0.1'
-PORT = int(sys.argv[2])
+
+
+
+def Connet2serv():
+
+    HOST = int(addrServ.get())
+    PORT = int(portServ.get())
+    connexion = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        connexion.connect((HOST, PORT))
+    except socket.error:
+        print ("La connexion a échoué...")
+        sys.exit()    
+    print ("Connexion établie avec le serveur...")
+
+
 
 # Variable globale d'arret de thread. Si celle-ci est à 1, tous les threads se coupent
 global iKillYouBloodyThread
 iKillYouBloodyThread = 0
-
-
 
 #-----------------------------------------------------------------------
 class ThreadReception(threading.Thread):
@@ -48,6 +62,23 @@ class ThreadEmission(threading.Thread):
     def __init__(self, conn):
         threading.Thread.__init__(self)
         self.connexion = conn           # réf. du socket de connexion
+
+
+
+
+
+    def Verification():
+        self.connexion.send(login.get().encode())
+
+    # if login.get() == 'admin':
+    #     # le mot de passe est bon : on affiche une boîte de dialogue puis on ferme la fenêtre
+    #     showinfo('Résultat','\n Connecté au serveur')
+    #     Mafenetre.destroy()
+    # else:
+    #     # le mot de passe est incorrect : on affiche une boîte de dialogue
+    #     showwarning('Résultat','Mot de passe incorrect.\nVeuillez recommencer !')
+    #     Motdepasse.set('')
+
         
     def run(self):
         global iKillYouBloodyThread     # variable d'arret du thread
@@ -71,17 +102,61 @@ class ThreadEmission(threading.Thread):
         print("Amigos!")
         self.connexion.close()
 
+
+        # Création de la fenêtre principale (main window)
+Mafenetre = Tk()
+Mafenetre.title('Connexion Annuaire')
+
+
+####################################    Login   #######################################
+### Label pour afficher 'login'
+Label1 = Label(Mafenetre, text = 'Login')
+Label1.pack(side = LEFT, padx = 5, pady = 5)
+
+# Création d'un widget Entry (champ de saisie) pour le login
+login= StringVar()
+Champ = Entry(Mafenetre, textvariable= login, bg ='bisque', fg='maroon')
+Champ.focus_set()
+Champ.pack(side = LEFT, padx = 5, pady = 5)
+
+
+
+#################################   Adresse du serveur  ###############################
+### Label pour afficher 'Adresse du serveur'
+Label2 = Label(Mafenetre, text = 'Adresse du serveur ')
+Label2.pack(side = LEFT, padx = 5, pady = 5)
+
+# Création d'un widget Entry (champ de saisie) pour l'adresse du serveur
+addrServ= StringVar()
+Champ2 = Entry(Mafenetre, textvariable= addrServ, bg ='bisque', fg='maroon')
+Champ2.pack(side = LEFT, padx = 5, pady = 5)
+
+
+#################################   Port du serveur     ###############################
+### Label pour afficher 'Adresse du serveur'
+Label3 = Label(Mafenetre, text = 'Port du serveur ')
+Label3.pack(side = LEFT, padx = 5, pady = 5)
+
+# Création d'un widget Entry (champ de saisie) pour le port du serveur
+portServ= StringVar()
+Champ3 = Entry(Mafenetre, textvariable= portServ, bg ='bisque', fg='maroon')
+Champ3.pack(side = LEFT, padx = 5, pady = 5)
+
+#################################   Bouton valider  ###############################
+# Création d'un widget Button (bouton Valider)
+Bouton = Button(Mafenetre, text ='Valider', command = Connet2serv)
+Bouton.pack(side = RIGHT, padx = 5, pady = 5)
+
+Mafenetre.mainloop()
+
+
+
 # ----------------Programme principal - Établissement de la connexion :
-connexion = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-try:
-    connexion.connect((HOST, PORT))
-except socket.error:
-    print ("La connexion a échoué...")
-    sys.exit()    
-print ("Connexion établie avec le serveur...")
-            
+   
 # Dialogue avec le serveur : on lance deux threads pour gérer
 # indépendamment l'émission et la réception des messages :
+
+
 
 th_E1 = ThreadEmission(connexion)
 th_R1 = ThreadReception(connexion)
