@@ -102,7 +102,8 @@ class ThreadClient(threading.Thread):
 
             ### Test du mot de passe fournit
             if check_password(GreenAnuaire[nom][6], motDePasse):
-                self.connexion.send("Connecté \n".encode())
+                welcome_message="Welcome "+nom+" 'FIN pour quitter'"
+                self.connexion.send(str(welcome_message).encode())
                 print("[Server] (",nom,") :Connecté!")
                 return True
             else:
