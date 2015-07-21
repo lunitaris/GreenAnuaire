@@ -3,21 +3,24 @@ import sys
 from tkinter import *
 from tkinter.messagebox import * # boîte de dialogue
 
-def Connet2serv():
+def closeWin():
+    Mafenetre.destroy()
 
-    HOST = addrServ.get()       ### récupération de l'adresse du serveur entré dans l'input box
-    PORT = int(portServ.get())  ### récupération du port du serveur entré dans l'input box
+def Connet2serv(LOGIN, PASS, HOST, PORT):
+
+    if(PORT == ''):
+        PORT=666    # Port par défaut du GreenAnnuaire
+        PORT = int(PORT)    # Conversion du PORT en int
+    else:
+        PORT = int(PORT)
+
+    adresse_socket = (HOST, PORT)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    server_address = (HOST   ,PORT)
-    sock.settimeout(1)
-    print('connecting to %s port %s' % server_address)
-
-    LOGIN = Tlogin.get()
-    PASS = mdp.get()
+    sock.settimeout(1)  # Timer: si rien n'arrive du serveur au bout de 1s
 
     try:
-        sock.connect(server_address)
+        sock.connect((HOST,PORT))
         sock.send(LOGIN.encode())
         time.sleep(1)
         sock.send(PASS.encode())
@@ -28,6 +31,14 @@ def Connet2serv():
 
         print(data.decode())
         if(data.decode() != "Error"):
+
+            ### Suppression de la fenetre si elle existe. Si elle n'existe pas, on continue
+            try:        
+                Mafenetre
+                Mafenetre.destroy()
+            except:
+                pass
+                
             while True:
 
                 rep = input("["+LOGIN+"]# ")
@@ -42,12 +53,12 @@ def Connet2serv():
                     print('%s' % data.decode())
                 except socket.timeout:              ### Si rien n'est envoyé par le serveur au bout de 1 seconde
                    pass
-
+        else:
+            print("Erreur d'authentification avec le serveur")
+            print("login / password incorrect!")
     except socket.error:
         print ("La connexion a échoué...")
-        showwarning('Résultat','Erreur de connection.\n!')
-        
-        #sock.shutdown(socket.SHUT_RDWR)
+        showwarning('Résultat','Erreur de connection!')
         sock.close()
         sys.exit()
 
@@ -55,57 +66,39 @@ def Connet2serv():
     sys.exit()
 
 
-Mafenetre = Tk()
+if(len(sys.argv) != 1 and len(sys.argv) != 5):
+    print("Usage: # python3 GreenClient.py  (lance le client en mode graphique (Tk))")
+    print("Usage: # python3 GreenClient.py  login password serveurIP port (lance le client en ligne de commande)")
+    print("Ex:    # python3 GreenServer.py user1 jaimelevert 192.168.1.66 666")
+    sys.exit()
+elif(len(sys.argv) == 5):
+    Connet2serv(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    sys.exit()
+
+Mafenetre = Tk()    # Creation de la fenetre
 Mafenetre.title('Connexion Annuaire')
+   
+Label(Mafenetre, text="Login:").grid(row=0, sticky=W)       # Label login
+Label(Mafenetre, text="Password:").grid(row=1, sticky=W)    # Label mot de passe
+Label(Mafenetre, text="Serveur:").grid(row=2, sticky=W)     # Label adresse du serveur
+Label(Mafenetre, text="Port:").grid(row=3, sticky=W)        # Label port du serveur
 
-
-####################################    Login   #######################################
-### Label pour afficher 'login'
-Label1 = Label(Mafenetre, text = 'Login')
-Label1.pack(side = LEFT, padx = 5, pady = 5)
-
-# Création d'un widget Entry (champ de saisie) pour le login
-Tlogin= StringVar()
-Champ = Entry(Mafenetre, textvariable= Tlogin, bg ='bisque', fg='maroon')
-Champ.focus_set()
-Champ.pack(side = LEFT, padx = 5, pady = 5)
-
-
-####################################    MDP   #######################################
-### Label pour afficher 'login'
-Label2 = Label(Mafenetre, text = 'Password')
-Label2.pack(side = LEFT, padx = 5, pady = 5)
-
-# Création d'un widget Entry (champ de saisie) pour le login
-mdp= StringVar()
-Champ = Entry(Mafenetre, textvariable= mdp, bg ='bisque', fg='maroon')
-Champ.focus_set()
-Champ.pack(side = LEFT, padx = 5, pady = 5)
-
-#################################   Adresse du serveur  ###############################
-### Label pour afficher 'Adresse du serveur'
-Label3 = Label(Mafenetre, text = 'Adresse du serveur ')
-Label3.pack(side = LEFT, padx = 5, pady = 5)
-
-# Création d'un widget Entry (champ de saisie) pour l'adresse du serveur
+### Placement des inputbox sur la grid. On le fait en 2 fois pour ne pas perdre l'adresse des valeurs
 addrServ= StringVar()
-Champ3 = Entry(Mafenetre, textvariable= addrServ, bg ='bisque', fg='maroon')
-Champ3.pack(side = LEFT, padx = 5, pady = 5)
+# portServ= IntVar()
+
+Tlogin = Entry(Mafenetre)             # Inputbox login
+mdp = Entry(Mafenetre)                # Inputbox mot de passe
+addrServ = Entry(Mafenetre)           # Inputbox adresse du serveur
+portServ = Entry(Mafenetre)           # Inputbox port du serveur
+# portServ.insert(0,666)
+
+Tlogin.grid(row=0, column=1)          # placement du inbox sur la grid
+mdp.grid(row=1, column=1)             # placement de l'inputbox mdp sur la grid
+addrServ.grid(row=2, column=1)        # placement de l'inputbox addServ sur la grid
+portServ.grid(row=3, column=1)        # placement de l'inputbox portServ sur la grid
 
 
-#################################   Port du serveur     ###############################
-### Label pour afficher 'Adresse du serveur'
-Label4 = Label(Mafenetre, text = 'Port du serveur ')
-Label4.pack(side = LEFT, padx = 5, pady = 5)
+Button(Mafenetre, text='Connect', command= lambda: Connet2serv(Tlogin.get(), mdp.get(), addrServ.get(), portServ.get())).grid(row=4, columnspan =2)    # Bouton de connexion
 
-# Création d'un widget Entry (champ de saisie) pour le port du serveur
-portServ= StringVar()
-Champ4 = Entry(Mafenetre, textvariable= portServ, bg ='bisque', fg='maroon')
-Champ4.pack(side = LEFT, padx = 5, pady = 5)
-
-#################################   Bouton valider  ###############################
-# Création d'un widget Button (bouton Valider)
-Bouton = Button(Mafenetre, text ='Valider', command = Connet2serv)
-Bouton.pack(side = RIGHT, padx = 5, pady = 5)
-
-Mafenetre.mainloop()
+mainloop()
