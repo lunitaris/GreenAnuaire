@@ -98,7 +98,6 @@ class ThreadClient(threading.Thread):
         ### En cas de mauvais mot de passe, la connection est coupé.
         if isPresent(nom) == 1:
             print("[Server] (",nom,") : Demande de connexion")
-            print("Mdp: ",motDePasse)
 
             ### Test du mot de passe fournit
             if check_password(GreenAnuaire[nom][6], motDePasse):
@@ -124,6 +123,7 @@ class ThreadClient(threading.Thread):
         \t* _add : ajouter un utilisateur
         \t* _print: print users
         \t* _list : lister users
+        \t* _search : chercher un element
         \t* _del : supprimer un user
         \t* _save : sauvegarde l'annuaire
         \t* FIN: termine la connexion
@@ -134,7 +134,7 @@ class ThreadClient(threading.Thread):
     def printCmdUser(self):
         heelp = """
         Commandes (Utilisateur):
-        \t* _print: print users
+        \t* _search : chercher un element
         \t* _list : lister users
         \t* FIN: termine la connexion
         """
@@ -243,11 +243,12 @@ class ThreadClient(threading.Thread):
             
             elif (msgClient =="_save" and isAdmin(nom)):  ### Sauvegarde l'annuaire courant
                 saveDico()
+                
+            elif (msgClient =="_print" and isAdmin(nom)): ### Affiche le contenu de l'annuaire.
+                self.connexion.send(afficherA().encode())
             #////////////////////////////////////////////////////////
 
 
-            elif msgClient =="_print": ### Affiche le contenu de l'annuaire.
-                self.connexion.send(afficherA().encode())
             elif msgClient =="_list":
                 self.connexion.send(listU().encode())
             elif msgClient =="_taille":
