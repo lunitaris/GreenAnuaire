@@ -3,6 +3,10 @@ import sys
 from tkinter import *
 from tkinter.messagebox import * # boîte de dialogue
 
+##  Client du GreenAnnuaire.
+##  Usage: GreenClient.py                               // lance la version graphique (Tk)
+##  Usage: GreenClient.py login, mdp, server, port      // Lance le directement le client
+
 def closeWin():
     Mafenetre.destroy()
 
