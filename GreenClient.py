@@ -56,7 +56,7 @@ def Connet2serv(LOGIN, PASS, HOST, PORT):
                     data = sock.recv(1024)
                     print('%s' % data.decode())
                 except socket.timeout:              ### Si rien n'est envoyé par le serveur au bout de 1 seconde
-                   pass
+                   pass                             ### on ne fait rien
         else:
             print("Erreur d'authentification avec le serveur")
             print("login / password incorrect!")
